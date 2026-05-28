@@ -1,3 +1,5 @@
+// Run this on the client machine to try and connect with a server over a IP adress and the listening port that you define
+
 package main
 
 import (
@@ -18,13 +20,14 @@ func main() {
 		interval = 8 * time.Second
 		// Timeout to connect to the server
 		timeout_duration = 4 * time.Second
+		// Set on local host for testing on same machine and network 
 		server_ip        = "127.0.0.1"
 		server_port      = 8080
 	)
 
 	fmt.Println("Trying to connect to the server")
-	// try and wait for 3 seconds to connect to remote server
-	c, err := net.DialTimeout("tcp", fmt.Sprintf("%v:%v", server_ip, server_port), 3*time.Second)
+	// try and wait for timeout duration to connect to remote server
+	c, err := net.DialTimeout("tcp", fmt.Sprintf("%v:%v", server_ip, server_port), timeout_duration)
 	if err != nil {
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
@@ -35,6 +38,7 @@ func main() {
 			return
 		}
 	}
+	// Defer the closure of the socket at the end of the script during cleanup using the defer keyword
 	defer c.Close()
 	fmt.Println("Connected to the server")
 	// Make a channel to stop go routines when the server no longer responds within alloted time
@@ -52,7 +56,7 @@ func main() {
 					var netErr net.Error
 					// Check if timeout error
 					if errors.As(err, &netErr) && netErr.Timeout() {
-						fmt.Println("\n[heartbeat] No response from server — connection dead")
+						fmt.Println("\nNo response")
 					} else {
 						// If not timeout, than a read error
 						fmt.Printf("\n[read] Error: %v\n", err)
@@ -68,7 +72,7 @@ func main() {
 			}
 			message := scanner.Text()
 			if message == "PONG" {
-				fmt.Println("[HEARTBEAT] - Server Alive")
+				continue
 			} else {
 				fmt.Printf("Server message: %v", message)
 			}
